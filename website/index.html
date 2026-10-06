@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SubtleNote</title>
+<meta name="description" content="Meeting notes, transcribed and summarized on your Mac.">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="favicon-180.png">
+<meta property="og:title" content="SubtleNote">
+<meta property="og:description" content="Be fully present in every call. Let SubtleNote handle the notes.">
+<meta property="og:image" content="subtlenote-mark-512.png">
+<style>
+/* Layout: one centered column — nav, hero with a live popover demo, features, three-step setup, closing CTA. Dark-only, matching the app. */
+:root {
+  --bg: #080a09;
+  --surface: #151917;
+  --surface-2: #1c211f;
+  --line: rgba(255,255,255,.09);
+  --fg: #f4f6f5;
+  --muted: #98a19d;
+  --green: #12b886;
+  --green-hi: #34d399;
+  --cyan: #67e8f9;
+  --on-green: #04130d;
+  --red: #f26d6d;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font);
+  font-size: 16px; line-height: 1.55; -webkit-font-smoothing: antialiased;
+  padding-inline: 16px; overflow-x: hidden;
+  background-image: radial-gradient(900px 520px at 50% -120px, rgba(18,184,134,.22), transparent 70%);
+  background-repeat: no-repeat;
+}
+.wrap { max-width: 1080px; margin-inline: auto; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+:focus-visible { outline: 2px solid var(--green-hi); outline-offset: 3px; border-radius: 8px; }
+
+/* Nav */
+nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 20px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; }
+.logo { width: 30px; height: 30px; border-radius: 8px; background: var(--green); display: grid; place-items: center; box-shadow: 0 0 18px rgba(18,184,134,.45); }
+.logo svg { width: 16px; height: 16px; }
+.nav-links { display: flex; align-items: center; gap: 22px; font-size: 14px; color: var(--muted); }
+.nav-links a:hover { color: var(--fg); }
+.nav-cta { padding: 8px 14px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); color: var(--fg); }
+@media (max-width: 560px) { .nav-links .hide-sm { display: none; } }
+
+/* Hero */
+.hero { display: grid; grid-template-columns: 1.15fr .85fr; gap: 56px; align-items: center; padding-block: 56px 72px; }
+.hero-copy { min-width: 0; }
+.eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.02); }
+.eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green-hi); box-shadow: 0 0 8px var(--green-hi); }
+h1 { font-size: clamp(36px, 5.6vw, 60px); line-height: 1.05; letter-spacing: -.025em; margin: 22px 0 18px; text-wrap: balance; font-weight: 800; }
+h1 .grad { background: linear-gradient(90deg, var(--green-hi), var(--cyan)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lede { color: var(--muted); font-size: 18px; max-width: 34em; margin: 0 0 32px; }
+.cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 18px; }
+.meta { color: var(--muted); font-size: 13px; margin-top: 14px; }
+@media (max-width: 880px) { .hero { grid-template-columns: 1fr; gap: 48px; padding-block: 32px 56px; } }
+
+/* Pay & Download button */
+.pay {
+  position: relative; overflow: hidden; isolation: isolate;
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-width: 248px; height: 58px; padding: 0 28px; border-radius: 999px;
+  background: #fff; color: #0b0d0c; font-weight: 700; font-size: 18px;
+  box-shadow: 0 0 0 0 rgba(52,211,153,.5), 0 10px 30px rgba(18,184,134,.18);
+  animation: breathe 2.8s ease-in-out infinite;
+  transition: transform .18s ease, background .3s ease, color .3s ease;
+}
+.pay:hover { transform: translateY(-2px) scale(1.02); }
+.pay:active { transform: scale(.97); }
+.pay::before { /* shine sweep */
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(110deg, transparent 30%, rgba(52,211,153,.35) 50%, transparent 70%);
+  transform: translateX(-120%); animation: sweep 3.2s ease-in-out infinite 1s;
+}
+.pay .fill { position: absolute; inset: 0; z-index: -1; background: var(--green); transform-origin: left; transform: scaleX(0); }
+.pay svg { width: 18px; height: 18px; flex: none; }
+.pay[data-state="busy"] { animation: none; cursor: progress; }
+.pay[data-state="downloading"] { animation: none; background: var(--surface-2); color: var(--fg); cursor: default; }
+.pay[data-state="downloading"]::before, .pay[data-state="done"]::before { display: none; }
+.pay[data-state="done"] { animation: none; background: var(--green); color: var(--on-green); }
+.pay .spin { width: 18px; height: 18px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: rot .7s linear infinite; }
+@keyframes breathe { 0%,100% { box-shadow: 0 0 0 0 rgba(52,211,153,.45), 0 10px 30px rgba(18,184,134,.18); } 50% { box-shadow: 0 0 0 10px rgba(52,211,153,0), 0 10px 40px rgba(18,184,134,.35); } }
+@keyframes sweep { 0% { transform: translateX(-120%); } 45%,100% { transform: translateX(120%); } }
+@keyframes rot { to { transform: rotate(360deg); } }
+.ghost { color: var(--muted); font-size: 15px; display: inline-flex; align-items: center; gap: 6px; }
+.ghost:hover { color: var(--fg); }
+
+/* Popover demo */
+.demo { position: relative; min-width: 0; justify-self: center; width: 100%; max-width: 380px; }
+.menubar { display: flex; justify-content: flex-end; align-items: center; gap: 14px; font-size: 13px; color: var(--muted); padding: 0 6px 10px; font-variant-numeric: tabular-nums; }
+.menubar .mb-icon { width: 24px; height: 22px; border-radius: 6px; background: var(--green); display: grid; place-items: center; }
+.menubar .mb-icon svg { width: 12px; height: 12px; }
+.pop { background: linear-gradient(180deg, var(--surface-2), var(--surface)); border: 1px solid var(--line); border-radius: 26px; padding: 22px; box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 0 60px rgba(18,184,134,.08); min-height: 392px; display: flex; flex-direction: column; }
+.pop-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+.step { display: flex; align-items: center; gap: 10px; }
+.badge { font-size: 11px; font-weight: 700; letter-spacing: .12em; color: var(--muted); padding: 5px 10px; border-radius: 999px; background: rgba(255,255,255,.04); border: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.dots { display: flex; gap: 4px; }
+.dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.14); transition: background .3s; }
+.dots i.on { background: var(--green-hi); }
+.example { font-size: 11px; color: var(--muted); }
+.view { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; animation: in .35s ease both; }
+.view[hidden] { display: none; }
+@keyframes in { from { opacity: .001; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.app-icon { width: 76px; height: 76px; border-radius: 20px; background: var(--green); display: grid; place-items: center; box-shadow: 0 0 40px rgba(18,184,134,.4); margin: 8px 0 18px; }
+.app-icon svg { width: 36px; height: 36px; }
+.view h3 { margin: 0 0 6px; font-size: 22px; letter-spacing: -.01em; }
+.view p { margin: 0; color: var(--muted); font-size: 14px; max-width: 26em; }
+.btn-primary, .btn-secondary { width: 100%; height: 50px; border-radius: 16px; font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform .15s ease, box-shadow .2s; }
+.btn-primary { background: var(--green); color: var(--on-green); box-shadow: 0 8px 30px rgba(18,184,134,.3); }
+.btn-primary.glow { animation: breathe 2.6s ease-in-out infinite; }
+.btn-secondary { background: var(--surface-2); border: 1px solid var(--line); }
+.btn-primary:active, .btn-secondary:active { transform: scale(.96); }
+.push { margin-top: auto; padding-top: 20px; width: 100%; }
+.lock { font-size: 12px; color: var(--muted); margin-top: 12px; display: flex; gap: 6px; align-items: center; justify-content: center; }
+.rec { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 18px; margin-top: 10px; }
+.rec i { width: 12px; height: 12px; border-radius: 50%; background: var(--green-hi); box-shadow: 0 0 0 5px rgba(52,211,153,.18); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 9px rgba(52,211,153,0); } }
+.timer { font-size: 52px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin: 6px 0 8px; }
+.wave { display: flex; align-items: center; gap: 5px; height: 44px; margin: 16px 0 4px; }
+.wave b { width: 5px; border-radius: 3px; background: linear-gradient(var(--cyan), var(--green-hi)); height: 30%; animation: bar .9s ease-in-out infinite alternate; }
+@keyframes bar { to { height: 100%; } }
+.stop-sq { width: 12px; height: 12px; border-radius: 3px; background: var(--red); }
+.ring { width: 56px; height: 56px; border-radius: 50%; border: 5px solid rgba(255,255,255,.08); border-top-color: var(--green-hi); animation: rot 1s linear infinite; margin: 18px 0 20px; }
+.bar-track { width: 80%; height: 6px; border-radius: 3px; background: rgba(255,255,255,.08); margin-top: 20px; overflow: hidden; }
+.bar-track span { display: block; height: 100%; width: 0; background: var(--green); border-radius: 3px; transition: width .2s linear; }
+.sum { align-items: stretch; text-align: left; }
+.sum h3 { font-size: 22px; }
+.sum .sub { font-size: 13px; color: var(--muted); }
+.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; border-radius: 14px; background: rgba(255,255,255,.03); border: 1px solid var(--line); margin: 14px 0 12px; position: relative; }
+.tabs button { height: 34px; border-radius: 10px; font-size: 13px; font-weight: 600; color: var(--muted); position: relative; z-index: 1; transition: color .2s; }
+.tabs button[aria-selected="true"] { color: var(--green-hi); }
+.tabs .slider { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 16px) / 3); border-radius: 10px; background: rgba(18,184,134,.14); border: 1px solid rgba(52,211,153,.35); transition: transform .3s cubic-bezier(.3,.7,.3,1); }
+.panel { background: rgba(255,255,255,.025); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; font-size: 14px; min-height: 120px; }
+.panel ul { margin: 0; padding-left: 18px; display: grid; gap: 8px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.row2 button { height: 46px; }
+
+/* Sections */
+section { padding-block: 64px; border-top: 1px solid var(--line); }
+.kicker { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--green-hi); }
+h2 { font-size: clamp(28px, 3.6vw, 40px); letter-spacing: -.02em; line-height: 1.1; margin: 10px 0 36px; text-wrap: balance; max-width: 18em; }
+.features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.feature { padding: 24px; border-radius: 20px; background: var(--surface); border: 1px solid var(--line); min-width: 0; }
+.feature .ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: rgba(18,184,134,.12); color: var(--green-hi); margin-bottom: 16px; }
+.feature .ic svg { width: 20px; height: 20px; }
+.feature h3 { margin: 0 0 6px; font-size: 18px; }
+.feature p { margin: 0; color: var(--muted); font-size: 15px; }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; list-style: none; padding: 0; margin: 0; counter-reset: s; }
+.steps li { counter-increment: s; min-width: 0; }
+.steps li::before { content: counter(s); display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(52,211,153,.4); color: var(--green-hi); font-weight: 700; font-size: 14px; margin-bottom: 14px; }
+.steps h3 { margin: 0 0 6px; font-size: 18px; }
+.steps p { margin: 0; color: var(--muted); font-size: 15px; }
+@media (max-width: 760px) { .features, .steps { grid-template-columns: 1fr; } }
+.closing { text-align: center; display: flex; flex-direction: column; align-items: center; }
+.closing h2 { margin-inline: auto; margin-bottom: 14px; }
+.closing .lede { margin-inline: auto; }
+footer { border-top: 1px solid var(--line); padding-block: 28px 40px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 13px; }
+
+/* Checkout modal */
+.scrim { position: fixed; inset: 0; background: rgba(0,0,0,.6); backdrop-filter: blur(6px); display: grid; place-items: center; padding: 16px; z-index: 50; animation: fade .2s ease both; }
+@keyframes fade { from { opacity: .001; } }
+.modal { width: min(420px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 24px; padding: 26px; box-shadow: 0 40px 100px rgba(0,0,0,.6); animation: pop .3s cubic-bezier(.2,.9,.3,1.2) both; }
+@keyframes pop { from { transform: scale(.92); opacity: .001; } }
+.modal h3 { margin: 0 0 4px; font-size: 20px; }
+.modal .note { font-size: 13px; color: var(--muted); margin: 0 0 18px; }
+.line-item { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); margin-bottom: 18px; }
+.line-item .logo { width: 44px; height: 44px; border-radius: 12px; }
+.line-item .logo svg { width: 22px; height: 22px; }
+.line-item b { display: block; }
+.line-item span { font-size: 13px; color: var(--muted); }
+.modal .actions { display: grid; gap: 10px; }
+.test-tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .1em; color: #f5c451; border: 1px solid rgba(245,196,81,.35); border-radius: 999px; padding: 3px 8px; margin-bottom: 12px; }
+.success { text-align: center; padding-block: 10px; }
+.check { width: 64px; height: 64px; border-radius: 50%; background: var(--green); display: grid; place-items: center; margin: 0 auto 14px; box-shadow: 0 0 40px rgba(18,184,134,.5); animation: pop .4s cubic-bezier(.2,.9,.3,1.4) both; }
+.check svg { width: 30px; height: 30px; }
+
+/* Download card */
+.dl { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); width: min(380px, calc(100% - 32px)); display: flex; gap: 14px; align-items: center; padding: 16px; border-radius: 20px; background: var(--surface-2); border: 1px solid var(--line); box-shadow: 0 20px 60px rgba(0,0,0,.6); z-index: 40; animation: slide .45s cubic-bezier(.2,.9,.3,1.2) both; }
+@keyframes slide { from { transform: translateY(24px); opacity: .001; } }
+.dl .logo { width: 48px; height: 48px; border-radius: 13px; flex: none; }
+.dl .logo svg { width: 22px; height: 22px; }
+.dl .info { flex: 1; min-width: 0; }
+.dl b { display: block; font-size: 15px; }
+.dl .track { height: 6px; border-radius: 3px; background: rgba(255,255,255,.08); margin: 8px 0 6px; overflow: hidden; }
+.dl .track span { display: block; height: 100%; width: 0; background: var(--green); border-radius: 3px; }
+.dl small { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.dl .x { color: var(--muted); width: 28px; height: 28px; border-radius: 8px; flex: none; }
+.dl .x:hover { background: rgba(255,255,255,.06); color: var(--fg); }
+
+.sound-toggle { position: fixed; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 30; font-size: 12px; color: var(--muted); padding: 7px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="bars" viewBox="0 0 24 24"><rect x="4" y="9" width="4" height="10" rx="2" fill="#04130d"/><rect x="10" y="4" width="4" height="15" rx="2" fill="#04130d"/><rect x="16" y="8" width="4" height="11" rx="2" fill="#04130d"/></symbol>
+  <symbol id="apple" viewBox="0 0 24 24"><path fill="currentColor" d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.8 1.2 1.8 2.6 3.1 2.5 1.3-.1 1.7-.8 3.2-.8s1.9.8 3.2.8c1.3 0 2.2-1.2 3-2.5.9-1.4 1.3-2.7 1.3-2.8-.1 0-2.6-1-2.6-4.1zM13.9 5c.7-.8 1.2-2 1-3.1-1 0-2.2.7-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.4z"/></symbol>
+  <symbol id="lock" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></symbol>
+  <symbol id="tick" viewBox="0 0 24 24"><path fill="none" stroke="#04130d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+</svg>
+
+<div class="wrap">
+  <nav aria-label="Main">
+    <a class="brand" href="#top"><span class="logo"><svg><use href="#bars"/></svg></span>SubtleNote</a>
+    <div class="nav-links">
+      <a class="hide-sm" href="#features">Features</a>
+      <a class="hide-sm" href="#how">How it works</a>
+      <button class="nav-cta" data-pay>Pay &amp; Download</button>
+    </div>
+  </nav>
+
+  <header class="hero" id="top">
+    <div class="hero-copy">
+      <span class="eyebrow"><span class="dot"></span>For Mac · Apple Silicon</span>
+      <h1>Be fully present in every call.<br><span class="grad">Let SubtleNote handle the notes.</span></h1>
+      <p class="lede">No bots. No cloud uploads. Press record, and when the call ends you get a summary, action items and a follow-up, generated on your Mac.</p>
+      <div class="cta-row">
+        <button class="pay" id="pay" data-pay data-state="idle"><span class="fill"></span><span class="pay-label"><svg><use href="#apple"/></svg></span><span class="pay-text">Pay &amp; Download</span></button>
+        <a class="ghost" href="#demo">Try the demo →</a>
+      </div>
+      <div class="meta">macOS 26+ · Apple Silicon · 28 MB</div>
+    </div>
+
+    <div class="demo" id="demo" aria-label="SubtleNote app demo">
+      <div class="menubar" aria-hidden="true"><span>Wi‑Fi</span><span class="mb-icon"><svg><use href="#bars"/></svg></span><span id="clock">9:41</span></div>
+      <div class="pop">
+        <div class="pop-head">
+          <div class="step"><span class="badge" id="stepBadge">STEP 5 OF 8</span><span class="dots" id="dots"></span></div>
+          <span class="example">Demo</span>
+        </div>
+
+        <div class="view" data-view="ready">
+          <div class="app-icon"><svg><use href="#bars"/></svg></div>
+          <h3>Ready to record</h3>
+          <p>Join your call as usual, then press record. SubtleNote captures your mic and the call audio.</p>
+          <div class="push">
+            <button class="btn-primary glow" id="startRec">Start Recording</button>
+            <div class="lock"><svg width="13" height="13"><use href="#lock"/></svg>100% on-device · nothing uploaded</div>
+          </div>
+        </div>
+
+        <div class="view" data-view="recording" hidden>
+          <div class="rec"><i></i>Recording</div>
+          <div class="timer" id="timer">00:00</div>
+          <p>Listening to your mic and the call.</p>
+          <div class="wave" id="wave"></div>
+          <div class="push">
+            <button class="btn-secondary" id="stopRec"><span class="stop-sq"></span>Stop &amp; Summarize</button>
+            <div class="lock"><svg width="13" height="13"><use href="#lock"/></svg>Recording on this Mac</div>
+          </div>
+        </div>
+
+        <div class="view" data-view="creating" hidden>
+          <div class="ring"></div>
+          <h3>Creating your summary</h3>
+          <p>Transcribing and summarizing on this Mac. Usually takes a few seconds.</p>
+          <div class="bar-track"><span id="sumBar"></span></div>
+          <p style="margin-top:10px;font-size:13px" id="sumLabel">Transcribing…</p>
+        </div>
+
+        <div class="view sum" data-view="summary" hidden>
+          <h3>Product Sync</h3>
+          <div class="sub">Today · 24 min · Zoom · example meeting</div>
+          <div class="tabs" role="tablist" id="tabs">
+            <span class="slider" id="slider"></span>
+            <button role="tab" aria-selected="true" data-tab="0">Summary</button>
+            <button role="tab" aria-selected="false" data-tab="1">Action Items</button>
+            <button role="tab" aria-selected="false" data-tab="2">Follow-up</button>
+          </div>
+          <div class="panel" id="panel"></div>
+          <div class="row2">
+            <button class="btn-secondary" id="copyBtn">Copy</button>
+            <button class="btn-primary" id="doneBtn">Done</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="features">
+    <div class="kicker">Why SubtleNote</div>
+    <h2>Notes that write themselves while you talk.</h2>
+    <div class="features">
+      <div class="feature">
+        <div class="ic"><svg viewBox="0 0 24 24"><use href="#lock"/></svg></div>
+        <h3>Stays on your Mac</h3>
+        <p>Transcription and summaries run on Apple Silicon. Your audio is never uploaded.</p>
+      </div>
+      <div class="feature">
+        <div class="ic"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M5 5l14 14M9 4h6a3 3 0 0 1 3 3v4M6 9v6a3 3 0 0 0 3 3h6"/></svg></div>
+        <h3>No meeting bots</h3>
+        <p>Nothing joins your Zoom, Meet or Teams call. SubtleNote records from your menu bar.</p>
+      </div>
+      <div class="feature">
+        <div class="ic"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M5 7h14M5 12h10M5 17h7"/></svg></div>
+        <h3>Summary, tasks, follow-up</h3>
+        <p>Every call ends with three tabs: what was decided, who does what, and a ready-to-send follow-up.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="kicker">How it works</div>
+    <h2>From download to your first notes in a few minutes.</h2>
+    <ol class="steps">
+      <li><h3>Pay &amp; download</h3><p>Checkout takes a minute. SubtleNote.dmg downloads straight after, with your license.</p></li>
+      <li><h3>Allow mic and call audio</h3><p>Two macOS prompts let SubtleNote hear you and the other side of the call.</p></li>
+      <li><h3>Press record</h3><p>Click the menu-bar icon, start recording, and stop when the call ends.</p></li>
+    </ol>
+  </section>
+
+  <section class="closing">
+    <div class="kicker">Get SubtleNote</div>
+    <h2>Your next meeting, already summarized.</h2>
+    <p class="lede">One purchase. Works with every call app on your Mac.</p>
+    <button class="pay" data-pay data-state="idle"><span class="fill"></span><span class="pay-label"><svg><use href="#apple"/></svg></span><span class="pay-text">Pay &amp; Download</span></button>
+    <div class="meta">macOS 26+ · Apple Silicon</div>
+  </section>
+
+  <footer>
+    <span>© 2026 SubtleNote</span>
+    <span>subtlenote.app</span>
+  </footer>
+</div>
+
+<button class="sound-toggle" id="soundToggle" aria-pressed="true">Sound on</button>
+
+<div class="scrim" id="checkout" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="coTitle">
+    <div id="coPay">
+      <span class="test-tag">TEST MODE</span>
+      <h3 id="coTitle">Checkout</h3>
+      <p class="note">The real Lemon Squeezy checkout opens here once payments are connected.</p>
+      <div class="line-item">
+        <span class="logo"><svg><use href="#bars"/></svg></span>
+        <div><b>SubtleNote for Mac</b><span>License key + download · price to be set</span></div>
+      </div>
+      <div class="actions">
+        <button class="btn-primary" id="coConfirm">Complete test payment</button>
+        <button class="btn-secondary" id="coCancel">Cancel</button>
+      </div>
+    </div>
+    <div id="coDone" class="success" hidden>
+      <div class="check"><svg><use href="#tick"/></svg></div>
+      <h3>Payment received</h3>
+      <p class="note" style="margin:6px 0 0">Your download is starting.</p>
+    </div>
+  </div>
+</div>
+
+<div class="dl" id="dl" hidden role="status" aria-live="polite">
+  <span class="logo"><svg><use href="#bars"/></svg></span>
+  <div class="info">
+    <b id="dlName">SubtleNote.dmg</b>
+    <div class="track"><span id="dlBar"></span></div>
+    <small id="dlText">0 of 28 MB</small>
+  </div>
+  <button class="x" id="dlClose" aria-label="Close">✕</button>
+</div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- Sounds (Web Audio, swap for real files later) ---------- */
+  let ctx = null, soundOn = true;
+  try { soundOn = localStorage.getItem('sn-sound') !== 'off'; } catch (e) {}
+  const toggle = $('#soundToggle');
+  const paintToggle = () => { toggle.textContent = soundOn ? 'Sound on' : 'Sound off'; toggle.setAttribute('aria-pressed', soundOn); };
+  paintToggle();
+  toggle.addEventListener('click', () => { soundOn = !soundOn; paintToggle(); try { localStorage.setItem('sn-sound', soundOn ? 'on' : 'off'); } catch (e) {} if (soundOn) play('tick'); });
+
+  function tone(freq, start, dur, type = 'sine', vol = .18, slideTo) {
+    const o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + start;
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + dur + .02);
+  }
+  const sounds = {
+    tick:    () => tone(1400, 0, .06, 'triangle', .12),
+    popUp:   () => tone(320, 0, .14, 'sine', .25, 760),
+    popDown: () => tone(700, 0, .16, 'sine', .22, 260),
+    chaChing:() => { tone(1318, 0, .12, 'triangle', .16); tone(1760, .09, .35, 'triangle', .16); tone(2637, .09, .3, 'sine', .06); },
+    chime:   () => { tone(784, 0, .25, 'sine', .18); tone(1175, .12, .45, 'sine', .16); },
+    whoosh:  () => tone(900, 0, .22, 'sawtooth', .04, 180),
+    click:   () => tone(2000, 0, .03, 'square', .05),
+  };
+  function play(name) {
+    if (!soundOn) return;
+    try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); sounds[name](); } catch (e) {}
+  }
+
+  /* ---------- Pay & Download flow ---------- */
+  const payBtns = [...document.querySelectorAll('[data-pay]')];
+  const heroPay = $('#pay');
+  const checkout = $('#checkout');
+  let flow = 'idle';
+
+  function setPay(state, text, spin) {
+    document.querySelectorAll('.pay').forEach(b => {
+      b.dataset.state = state;
+      b.querySelector('.pay-label').innerHTML = spin ? '<span class="spin"></span>' : '<svg><use href="#apple"/></svg>';
+      b.querySelector('.pay-text').textContent = text;
+    });
+  }
+  function setFill(p) { document.querySelectorAll('.pay .fill').forEach(f => f.style.transform = `scaleX(${p})`); }
+
+  payBtns.forEach(b => b.addEventListener('click', () => {
+    if (flow === 'downloading') return;
+    if (flow === 'done') { showDl(); return; }
+    play('popUp');
+    flow = 'busy'; setPay('busy', 'Opening checkout…', true);
+    setTimeout(() => { checkout.hidden = false; $('#coConfirm').focus(); }, reduce ? 0 : 550);
+  }));
+
+  function closeCheckout() { checkout.hidden = true; $('#coPay').hidden = false; $('#coDone').hidden = true; }
+  $('#coCancel').addEventListener('click', () => { play('click'); closeCheckout(); flow = 'idle'; setPay('idle', 'Pay & Download'); });
+  checkout.addEventListener('click', e => { if (e.target === checkout && flow === 'busy') $('#coCancel').click(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !checkout.hidden && flow === 'busy') $('#coCancel').click(); });
+
+  $('#coConfirm').addEventListener('click', () => {
+    play('chaChing');
+    $('#coPay').hidden = true; $('#coDone').hidden = false;
+    setTimeout(() => { closeCheckout(); startDownload(); }, reduce ? 300 : 1400);
+  });
+
+  const dl = $('#dl'), TOTAL = 28;
+  function showDl() { dl.hidden = false; }
+  $('#dlClose').addEventListener('click', () => { play('click'); dl.hidden = true; });
+
+  function startDownload() {
+    flow = 'downloading'; setPay('downloading', 'Downloading… 0%', true);
+    $('#dlName').textContent = 'SubtleNote.dmg'; showDl(); play('whoosh');
+    const dur = reduce ? 600 : 4200, t0 = performance.now();
+    (function frame(now) {
+      const p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 2);
+      $('#dlBar').style.width = (e * 100) + '%'; setFill(e);
+      $('#dlText').textContent = `${(e * TOTAL).toFixed(1)} of ${TOTAL} MB`;
+      document.querySelectorAll('.pay .pay-text').forEach(t => t.textContent = `Downloading… ${Math.round(e * 100)}%`);
+      if (p < 1) requestAnimationFrame(frame); else finish();
+    })(t0);
+  }
+  function finish() {
+    flow = 'done'; play('chime'); setFill(0);
+    setPay('done', 'Downloaded · Open SubtleNote');
+    document.querySelectorAll('.pay .pay-label').forEach(l => l.innerHTML = '<svg><use href="#tick"/></svg>');
+    $('#dlText').textContent = 'Done · open it from your Downloads folder';
+  }
+
+  /* ---------- App demo (steps 5–8) ---------- */
+  const dots = $('#dots');
+  for (let i = 0; i < 8; i++) dots.appendChild(document.createElement('i'));
+  const views = [...document.querySelectorAll('.view')];
+  const stepOf = { ready: 5, recording: 6, creating: 7, summary: 8 };
+  function show(name) {
+    views.forEach(v => v.hidden = v.dataset.view !== name);
+    const n = stepOf[name];
+    $('#stepBadge').textContent = `STEP ${n} OF 8`;
+    [...dots.children].forEach((d, i) => d.classList.toggle('on', i < n));
+  }
+  show('ready');
+
+  const wave = $('#wave');
+  for (let i = 0; i < 11; i++) { const b = document.createElement('b'); b.style.animationDelay = (-(i * 137) % 900) + 'ms'; b.style.animationDuration = (650 + (i * 71) % 400) + 'ms'; wave.appendChild(b); }
+
+  let timerId, secs;
+  $('#startRec').addEventListener('click', () => {
+    play('popUp'); show('recording'); secs = 754; // starts at 12:34 like the design
+    const paint = () => $('#timer').textContent = `${String(Math.floor(secs / 60)).padStart(2, '0')}:${String(secs % 60).padStart(2, '0')}`;
+    paint(); timerId = setInterval(() => { secs++; paint(); }, 1000);
+  });
+
+  $('#stopRec').addEventListener('click', () => {
+    clearInterval(timerId); play('popDown'); show('creating');
+    const bar = $('#sumBar'), label = $('#sumLabel'), dur = reduce ? 500 : 2600, t0 = performance.now();
+    (function frame(now) {
+      const p = Math.min(1, (now - t0) / dur);
+      bar.style.width = (p * 100) + '%';
+      label.textContent = p < .5 ? 'Transcribing…' : p < .9 ? 'Summarizing…' : 'Almost done…';
+      if (p < 1) requestAnimationFrame(frame); else { play('chime'); show('summary'); selectTab(0); }
+    })(t0);
+  });
+
+  const content = [
+    ['Reprioritized two Q3 features for next sprint.', 'Design shares updated mockups by Thursday.', 'Weekly sync moves to 10:30 AM going forward.'],
+    ['Priya: send updated mockups by Thursday', 'Arjun: re-scope the export feature', 'Everyone: accept the new 10:30 AM invite'],
+    ['Hi team, thanks for today. We moved two Q3 features into next sprint, mockups are due Thursday, and our weekly sync is now at 10:30 AM.'],
+  ];
+  const tabs = [...document.querySelectorAll('#tabs button')];
+  function selectTab(i) {
+    tabs.forEach((t, j) => t.setAttribute('aria-selected', i === j));
+    $('#slider').style.transform = `translateX(calc(${i} * (100% + 4px)))`;
+    const items = content[i];
+    $('#panel').innerHTML = items.length > 1 ? '<ul>' + items.map(x => `<li>${x}</li>`).join('') + '</ul>' : `<p style="margin:0">${items[0]}</p>`;
+    $('#panel').dataset.tab = i;
+  }
+  tabs.forEach(t => t.addEventListener('click', () => { play('tick'); selectTab(+t.dataset.tab); }));
+
+  $('#copyBtn').addEventListener('click', () => {
+    play('click');
+    const btn = $('#copyBtn'), text = content[+$('#panel').dataset.tab].join('\n');
+    const ok = () => { btn.textContent = 'Copied ✓'; setTimeout(() => btn.textContent = 'Copy', 1200); };
+    try { navigator.clipboard.writeText(text).then(ok, ok); } catch (e) { ok(); }
+  });
+  $('#doneBtn').addEventListener('click', () => { play('whoosh'); show('ready'); });
+})();
+</script>
+</body>
+</html>
